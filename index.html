@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<!--
+  HISTORIAS DE VIDA!
+  Simulador pedagógico de trade-offs ^•ﻌ•^
+ 
+  Por Santiago Caballero Rosas
+  
+  Esta página es una herramienta didáctica para ilustrar cómo los organismos
+  asignan recursos limitados entre caracteres que compiten entre sí (trade-offs).
+  La idea es que los estudiantes vean que no existe una estrategia "óptima" universal,
+  sino que distintas combinaciones de rasgos pueden ser igualmente exitosas
+  dependiendo del ambiente (!).
+
+  Se puede usar este código pero dar debidos derechos al autor y no modificar sin preguntar.
+  ...me tardé dos semanas con esto, por favor, respetemos. 
+  
+  Este código se realizó con muy mínima ayuda de IA, pero mucho StackOverflow =P
+
+  Christos anesti! Alithos anesti! +
+-->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historias de Vida</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@300;700;900&display=swap" rel="stylesheet">
+<style>
+  /* 
+   * Variables de color
+   */
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a40;
+    --accent: #00ff88;     
+    --accent2: #ff6b35;    
+    --accent3: #7c6bff;   
+    --text: #e8e8f0;
+    --muted: #6a6a8a;
+    --warn: #ffcc00;       
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Gradientes de fondo para que no se vea tan plano */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(0,255,136,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 90%, rgba(124,107,255,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 60% 40%, rgba(255,107,53,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Cuadrícula de fondo sutil - GooglePages */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  /* HEADER   */
+  .header {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: fadeDown 0.8s ease;
+  }
+
+  .header .eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  /* Nombre del autor debajo del título :P */
+  .header .author-tag {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .header h1 {
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 900;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    line-height: 1.1;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent3) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+
+  .header p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  /* TABS!  */
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  .tab-content { display: none; animation: fadeUp 0.4s ease; }
+  .tab-content.active { display: block; }
+
+  /* }CAJA DE ESCENARIO!!  */
+  .scenario-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .scenario-box h3 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 0.75rem;
+    color: var(--accent2);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .scenario-box p { font-size: 0.85rem; line-height: 1.7; color: var(--text); }
+
+  /* INPUT DE NOMBRE (modificar después !!)  */
+  .form-group { margin-bottom: 1.5rem; }
+
+  .form-group label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-group input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus { border-color: var(--accent); }
+
+  /* BARRA DE PRESUPUESTO
+   * Cambia de color según puntos restantes según el gradiente de
+   */
+  .budget-display {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .budget-number {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--accent);
+    min-width: 60px;
+    transition: color 0.3s;
+  }
+
+  .budget-number.low   { color: var(--accent2); }
+  .budget-number.empty { color: #ff3333; }
+
+  .budget-bar-wrap { flex: 1; }
+
+  .budget-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .budget-bar-bg { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+
+  .budget-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 4px;
+    transition: width 0.3s ease, background 0.3s;
+  }
+
+  .budget-bar-fill.low   { background: linear-gradient(90deg, var(--accent2), var(--warn)); }
+  .budget-bar-fill.empty { background: #ff3333; }
+
+  /* SECCIONES Y TARJETAS DE CARACTERES!   */
+  .trait-section { margin-bottom: 2rem; }
+
+  .trait-section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .trait-section-header h3 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .vs-badge {
+    font-size: 0.65rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--accent2);
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    letter-spacing: 0.1em;
+  }
+
+  .trait-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .trait-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .trait-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .trait-card:hover { border-color: var(--muted); transform: translateY(-1px); }
+
+  .trait-card.selected {
+    border-color: var(--accent);
+    background: rgba(0,255,136,0.05);
+  }
+
+  .trait-card.selected::before { opacity: 0.03; }
+
+  .trait-card.disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .trait-card-inner { position: relative; z-index: 1; }
+  .trait-icon { font-size: 1.8rem; margin-bottom: 0.5rem; display: block; }
+
+  .trait-name {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+    line-height: 1.3;
+  }
+
+  .trait-desc { font-size: 0.68rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem; }
+
+  .trait-cost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    color: var(--warn);
+  }
+
+  .trait-card.selected .trait-cost {
+    background: rgba(0,255,136,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Check mark    */
+  .check-mark {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: var(--bg);
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.2s;
+    z-index: 2;
+  }
+
+  .trait-card.selected .check-mark { opacity: 1; transform: scale(1); }
+
+  /* BOTÓN ENVIAR     */
+  .submit-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border: none;
+    border-radius: 8px;
+    color: var(--bg);
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 1.5rem;
+  }
+
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,255,136,0.3); }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* RESULTADOS   */
+  .result-panel { display: none; animation: fadeUp 0.5s ease; }
+  .result-panel.show { display: block; }
+
+  .env-reveal {
+    text-align: center;
+    padding: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .env-emoji { font-size: 4rem; display: block; margin-bottom: 1rem; animation: bounce 0.6s ease; }
+
+  .env-name {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+  }
+
+  .env-desc { color: var(--muted); font-size: 0.8rem; }
+
+  .fitness-display { text-align: center; margin: 2rem 0; }
+
+  .fitness-score {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 5rem;
+    font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: countUp 1s ease;
+  }
+
+  .fitness-label { font-size: 0.7rem; letter-spacing: 0.3em; color: var(--muted); margin-top: 0.5rem; }
+
+  .trait-breakdown {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .trait-breakdown h3 {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .breakdown-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8rem;
+  }
+
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-icon { font-size: 1.2rem; }
+  .breakdown-name { flex: 1; }
+  .breakdown-pts { color: var(--accent); font-weight: 700; }
+  .breakdown-pts.zero { color: var(--muted); }
+
+  .insight-box {
+    background: rgba(124,107,255,0.08);
+    border: 1px solid rgba(124,107,255,0.3);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+
+  .insight-box strong { color: var(--accent3); }
+
+  .play-again-btn {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    padding: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .play-again-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* LEADERBOARD (CORREGIR!!!!!!!!!!!) */
+  .leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .leaderboard-header h2 { font-family: 'Unbounded', sans-serif; font-size: 1rem; font-weight: 700; }
+
+  .lb-controls { display: flex; gap: 0.5rem; align-items: center; }
+
+  .refresh-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Botón para limpiar entre grupos    */
+  .clear-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .clear-btn:hover { border-color: #ff3333; color: #ff3333; }
+
+  .lb-entry {
+    display: grid;
+    grid-template-columns: 40px 1fr auto auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .lb-entry.top1 { border-color: rgba(255,204,0,0.4); background: rgba(255,204,0,0.04); }
+  .lb-entry.top2 { border-color: rgba(200,200,220,0.3); }
+  .lb-entry.top3 { border-color: rgba(255,107,53,0.3); }
+
+  .lb-rank { font-family: 'Unbounded', sans-serif; font-size: 0.8rem; font-weight: 700; color: var(--muted); text-align: center; }
+  .lb-rank.top1 { color: var(--warn); }
+  .lb-rank.top2 { color: #c8c8dc; }
+  .lb-rank.top3 { color: var(--accent2); }
+
+  .lb-name { font-size: 0.85rem; font-weight: 700; }
+  .lb-traits { font-size: 0.65rem; color: var(--muted); margin-top: 0.2rem; }
+  .lb-env { font-size: 1.2rem; text-align: center; }
+  .lb-env-label { font-size: 0.6rem; color: var(--muted); text-align: center; }
+  .lb-score { font-family: 'Unbounded', sans-serif; font-size: 1.1rem; font-weight: 900; color: var(--accent); text-align: right; }
+  .lb-score-label { font-size: 0.6rem; color: var(--muted); text-align: right; }
+
+  .empty-lb { text-align: center; padding: 3rem; color: var(--muted); font-size: 0.8rem; }
+  .empty-lb .big { font-size: 3rem; margin-bottom: 1rem; }
+
+  .env-legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+
+  .env-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  /* Nota pedagógica sobre diversidad ----> el punto central de la actividad */
+  .diversity-note {
+    background: rgba(0,255,136,0.05);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+  }
+
+  .diversity-note strong { color: var(--accent); }
+
+  /* "ANIMACIONES" muy básicas, mejorar */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.2); }
+  }
+
+  @keyframes countUp {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+ 
+  @media (max-width: 600px) {
+    .trait-pair { grid-template-columns: 1fr; }
+    .lb-entry { grid-template-columns: 30px 1fr auto; }
+    .lb-env { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="container">
+
+  <!-- HEADERR -->
+  <div class="header">
+    <div class="eyebrow">Ecología 5059</div>
+    <h1>Historias de Vida</h1>
+    <div class="author-tag">por Santiago Caballero Rosas</div>
+    <p>Diseña un organismo. Distribuye tus recursos entre caracteres que compiten entre sí. Sobrevive al ambiente. Pero recuerda: no hay una solución óptima única.</p>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('game')">▶ Jugar</button>
+    <button class="tab-btn" onclick="switchTab('lb')">🏆 Puntuaciones</button>
+  </div>
+
+  <!-- ===== TAB ===== -->
+  <div class="tab-content active" id="tab-game">
+    <div id="game-form">
+
+      <div class="scenario-box">
+        <h3>Escenario (!)</h3>
+        <p>Eres un organismo que quiere sobrevivir. Tienes <strong>10 puntos</strong> para invertir en caracteres antes de que el ambiente sea revelado. RECUERDAA: Los recursos son limitados por lo que invertir en un carácter significa sacrificar otro. ¿Cuál es tu estrategia?</p>
+      </div>
+
+      <div class="form-group">
+        <label>Tu nombre (deberás enviar captura)</label>
+        <input type="text" id="player-name" placeholder="ej: Equipo A, María, Lab3..." maxlength="30">
+      </div>
+
+      <!-- Barra de presupuesto — actualizada por updateBudgetDisplay() !! -->
+      <div class="budget-display">
+        <div class="budget-number" id="budget-num">10</div>
+        <div class="budget-bar-wrap">
+          <div class="budget-label">
+            <span>PUNTOS DISPONIBLES</span>
+            <span id="budget-used">0/10 invertidos</span>
+          </div>
+          <div class="budget-bar-bg">
+            <div class="budget-bar-fill" id="budget-bar" style="width:100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dispersión vs Reproducción !-->
+      <div class="trait-section">
+        <div class="trait-section-header">
+          <h3>Dispersión vs Reproducción</h3>
+          <span class="vs-badge">TRADE-OFF</span>
+        </div>
+        <div class="trait-pair">
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="wings" data-cost="3">
+            <div class="check-mark">✓</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">🪶</span>
+              <div class="trait-name">Alas Grandes</div>
+              <div class="trait-desc">Mayor capacidad de vuelo. Permite escapar a nuevos territorios cuando los recursos escasean.</div>
+              <span class="trait-cost">3 puntos</span>
+            </div>
+          </div>
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="gonads" data-cost="3">
+            <div class="check-mark">✓</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">🥚</span>
+              <div class="trait-name">Gónadas Grandes</div>
+              <div class="trait-desc">Alta inversión reproductiva. Más descendencia cuando el ambiente es favorable.</div>
+              <span class="trait-cost">3 puntos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!--Defensa vs Crecimiento -->
+      <div class="trait-section">
+        <div class="trait-section-header">
+          <h3>Defensa vs Crecimiento</h3>
+          <span class="vs-badge">TRADE-OFF</span>
+        </div>
+        <div class="trait-pair">
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="armor" data-cost="2">
+            <div class="check-mark">✓</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">🛡️</span>
+              <div class="trait-name">Coraza</div>
+              <div class="trait-desc">Protección física contra depredadores. Reduce la movilidad pero aumenta la supervivencia.</div>
+              <span class="trait-cost">2 puntos</span>
+            </div>
+          </div>
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="size" data-cost="2">
+            <div class="check-mark">✓</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">💪</span>
+              <div class="trait-name">Tamaño Corporal</div>
+              <div class="trait-desc">Mayor masa corporal. Ventaja competitiva para acceso a recursos y pareja.</div>
+              <span class="trait-cost">2 puntos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estrategia r vs K -->
+      <div class="trait-section">
+        <div class="trait-section-header">
+          <h3>Cantidad vs Calidad de descendencia</h3>
+          <span class="vs-badge">TRADE-OFF</span>
+        </div>
+        <div class="trait-pair">
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="many-eggs" data-cost="2">
+            <div class="check-mark">✓</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">🫧</span>
+              <div class="trait-name">Muchos huevos pequeños</div>
+              <div class="trait-desc">Alta fecundidad. Estrategia r: muchos hijos con poca inversión individual.</div>
+              <span class="trait-cost">2 puntos</span>
+            </div>
+          </div>
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="few-eggs" data-cost="2">
+            <div class="check-mark">✓</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">🥚</span>
+              <div class="trait-name">Pocos huevos grandes</div>
+              <div class="trait-desc">Baja fecundidad, alta inversión por hijo. Estrategia K: descendencia robusta.</div>
+              <span class="trait-cost">2 puntos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Smelparidad aproximada vs Iterarparidad -->
+      <div class="trait-section">
+        <div class="trait-section-header">
+          <h3>Tiempo de vida</h3>
+          <span class="vs-badge">TRADE-OFF</span>
+        </div>
+        <div class="trait-pair">
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="early" data-cost="1">
+            <div class="check-mark">✓</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">⚡</span>
+              <div class="trait-name">Madurez Temprana</div>
+              <div class="trait-desc">Reproducción rápida antes de morir. Prioriza el presente sobre el futuro.</div>
+              <span class="trait-cost">1 punto</span>
+            </div>
+          </div>
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="longevity" data-cost="2">
+            <div class="check-mark">✓</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">⏳</span>
+              <div class="trait-name">Longevidad</div>
+              <div class="trait-desc">Vida larga. Múltiples ciclos reproductivos posibles si el ambiente es estable.</div>
+              <span class="trait-cost">2 puntos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comportamiento social!-->
+      <div class="trait-section">
+        <div class="trait-section-header">
+          <h3>Comportamiento social</h3>
+          <span class="vs-badge">TRADE-OFF</span>
+        </div>
+        <div class="trait-pair">
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="solitary" data-cost="1">
+            <div class="check-mark">✓</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">🦎</span>
+              <div class="trait-name">Solitario</div>
+              <div class="trait-desc">Sin competencia por recursos internos al grupo. Más recursos individuales disponibles.</div>
+              <span class="trait-cost">1 punto</span>
+            </div>
+          </div>
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="gregarious" data-cost="2">
+            <div class="check-mark">✓</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">🐜</span>
+              <div class="trait-name">Gregario</div>
+              <div class="trait-desc">Protección en grupo. Detección colectiva de depredadores y cooperación.</div>
+              <span class="trait-cost">2 puntos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="submit-btn" id="submit-btn" onclick="submitOrganismo()" disabled>
+        Lanzar organismo al ambiente →
+      </button>
+    </div>
+
+    <!--PANEL DE RESULTADOS (aparece tras submitOrganismo) -->
+    <div class="result-panel" id="result-panel">
+      <div class="env-reveal" id="env-reveal">
+        <span class="env-emoji" id="env-emoji"></span>
+        <div class="env-name" id="env-name"></div>
+        <div class="env-desc" id="env-desc"></div>
+      </div>
+
+      <div class="fitness-display">
+        <div class="fitness-score" id="fitness-score">0</div>
+        <div class="fitness-label">ÍNDICE DE FITNESS (0–100)</div>
+      </div>
+
+      <div class="trait-breakdown" id="trait-breakdown">
+        <h3>Desglose por carácter</h3>
+        <div id="breakdown-rows"></div>
+      </div>
+
+      <div class="insight-box" id="insight-box"></div>
+
+      <button class="play-again-btn" onclick="resetGame()">↩ Volver a intentarlo</button>
+    </div>
+  </div>
+
+  <!-- ===== LEADERBOARD ===== -->
+  <div class="tab-content" id="tab-lb">
+    <div class="leaderboard-header">
+      <h2>🏆 Tabla de organismos</h2>
+      <div class="lb-controls">
+        <button class="refresh-btn" onclick="loadLeaderboard()">↻ Actualizar</button>
+        <!-- Útil para reiniciar entre grupos de la clase!-->
+        <button class="clear-btn" onclick="clearLeaderboard()">🗑 Limpiar</button>
+      </div>
+    </div>
+
+
+    <div class="diversity-note">
+      <strong>Observa la diversidad:</strong> Distintas estrategias pueden producir fitness similar.
+      Esto ilustra por qué la selección natural mantiene variación en las poblaciones ->
+      no existe un fenotipo único óptimo cuando el ambiente es impredecible ^•ﻌ•^
+    </div>
+
+    <div class="env-legend">
+      <span class="env-pill">🌵 Alta densidad/Sequía</span>
+      <span class="env-pill">🦅 Alta depredación</span>
+      <span class="env-pill">🌱 Ambiente estable</span>
+    </div>
+
+    <div id="lb-list">
+      <div class="empty-lb">
+        <div class="big">🔬</div>
+        <div>Cargando organismos...</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+/*
+ * ============================================================
+ * LÓGICA PRINCIPAL
+ * Santiago Caballero Rosas
+ * ============================================================
+ *
+ * Flujo del juego:
+ *   1. El usuario selecciona caracteres gastando hasta 10 puntos
+ *   2. Al enviar, se sortea un ambiente al azar (de 3)
+ *   3. fitness = Σ puntaje(carácter, ambiente) normalizado a 0-100
+ *   4. Resultado → localStorage → leaderboard
+ *
+ * ============================================================
+ */
+
+// DATOS DEL JUEGO 
+
+const BUDGET = 10; // presupuesto total de puntos por jugador
+
+// Catálogo de caracteres disponibles
+const TRAITS = {
+  wings:       { name: 'Alas Grandes',           icon: '🪶', cost: 3 },
+  gonads:      { name: 'Gónadas Grandes',         icon: '🥚', cost: 3 },
+  armor:       { name: 'Coraza',                  icon: '🛡️', cost: 2 },
+  size:        { name: 'Tamaño Corporal',         icon: '💪', cost: 2 },
+  'many-eggs': { name: 'Muchos huevos pequeños',  icon: '🫧', cost: 2 },
+  'few-eggs':  { name: 'Pocos huevos grandes',   icon: '🥚', cost: 2 },
+  early:       { name: 'Madurez Temprana',        icon: '⚡', cost: 1 },
+  longevity:   { name: 'Longevidad',              icon: '⏳', cost: 2 },
+  solitary:    { name: 'Solitario',               icon: '🦎', cost: 1 },
+  gregarious:  { name: 'Gregario',                icon: '🐜', cost: 2 }
+};
+
+/*
+ * Tabla de contribución al fitness por carácter y ambiente.
+ * Escala 0-3: cuánto aporta ese carácter a sobrevivir en ese contexto:
+ *
+ *   drought   → favorece dispersión, madurez temprana, tamaño individual
+ *   predation → favorece coraza, gregariedad (detección grupal)
+ *   stable    → favorece reproducción, longevidad, estrategia K
+ *
+ * Basado en teoría de historias de vida (Stearns 1989, Roff 2002). También me apoyé en A Biologist's Guide to Mathemathical Modelling de Otto y Day.
+ *
+ */
+const FITNESS_TABLE = {
+  drought: {
+    wings: 3, gonads: 0, armor: 1, size: 2,
+    'many-eggs': 0, 'few-eggs': 2, early: 3, longevity: 0,
+    solitary: 2, gregarious: 0
+  },
+  predation: {
+    wings: 1, gonads: 1, armor: 3, size: 0,
+    'many-eggs': 0, 'few-eggs': 1, early: 1, longevity: 1,
+    solitary: 0, gregarious: 3
+  },
+  stable: {
+    wings: 0, gonads: 3, armor: 0, size: 2,
+    'many-eggs': 2, 'few-eggs': 1, early: 0, longevity: 3,
+    solitary: 1, gregarious: 1
+  }
+};
+
+/*
+ * Fitness máximo alcanzable con 10 puntos en cada ambiente.
+ * Usado para normalizar el puntaje a 0-100.
+ * Calculado manualmente con la combinación óptima por ambiente:
+ *   drought:   alas(3) + early(3) + size(2) + few-eggs(2) = 14 fitness bruto
+ *   predation: armor(3) + gregarious(3) + wings(1) + gonads(1) + few-eggs(1) = 11
+ *   stable:    gonads(3) + longevity(3) + size(2) + many-eggs(2) = 13 (10 pts exacto)
+ */
+const MAX_FITNESS = { drought: 14, predation: 11, stable: 13 };
+
+// Datos de cada ambiente para mostrar en la revelación
+const ENVIRONMENTS = {
+  drought: {
+    emoji: '🌵',
+    label: 'Alta Densidad / Sequía',
+    desc:  'Los recursos son escasos. La competencia intraespecífica es extrema. Quienes puedan dispersarse tienen ventaja.'
+  },
+  predation: {
+    emoji: '🦅',
+    label: 'Alta Depredación',
+    desc:  'Depredadores en todos lados. La supervivencia individual depende de la defensa y la detección grupal.'
+  },
+  stable: {
+    emoji: '🌱',
+    label: 'Ambiente Estable',
+    desc:  'Recursos abundantes, pocos depredadores. La competencia es baja y vale la pena invertir en reproducción.'
+  }
+};
+
+// Clave de localStorage 
+const STORAGE_KEY = 'scr-ecologia5059-leaderboard-v1';
+
+
+// ESTADO DE LA SESIÓN!
+
+let selected    = new Set(); // IDs de caracteres seleccionados
+let spentPoints = 0;         // suma de costos de los seleccionados
+
+
+// SELECCIÓN DE CARACTERES !
+
+/*
+ * toggleTrait- click en tarjeta.
+ * Agrega o quita del set y actualiza todo visualmente.
+ */
+function toggleTrait(card) {
+  if (card.classList.contains('disabled')) return;
+
+  const id   = card.dataset.id;
+  const cost = parseInt(card.dataset.cost);
+
+  if (selected.has(id)) {
+    // Quitar: devolver puntos
+    selected.delete(id);
+    spentPoints -= cost;
+    card.classList.remove('selected');
+  } else {
+    // Agregar: verificar presupuesto antes
+    if (spentPoints + cost > BUDGET) return;
+    selected.add(id);
+    spentPoints += cost;
+    card.classList.add('selected');
+  }
+
+  updateBudgetDisplay();
+  updateDisabledStates();
+  updateSubmitBtn();
+}
+
+/*
+ * updateBudgetDisplay: refresca el número, la barra y el texto.
+ * Los colores cambian según cuánto queda disponible.
+ */
+function updateBudgetDisplay() {
+  const remaining = BUDGET - spentPoints;
+  const pct       = (remaining / BUDGET) * 100;
+
+  const numEl  = document.getElementById('budget-num');
+  const barEl  = document.getElementById('budget-bar');
+  const usedEl = document.getElementById('budget-used');
+
+  numEl.textContent  = remaining;
+  barEl.style.width  = pct + '%';
+  usedEl.textContent = spentPoints + '/' + BUDGET + ' invertidos';
+
+  // Limpiar y reasignar clase de color
+  numEl.className = 'budget-number';
+  barEl.className = 'budget-bar-fill';
+
+  if (remaining <= 2 && remaining > 0) {
+    numEl.classList.add('low');
+    barEl.classList.add('low');
+  }
+  if (remaining === 0) {
+    numEl.classList.add('empty');
+    barEl.classList.add('empty');
+  }
+}
+
+/*
+ * updateDisabledStates
+ */
+function updateDisabledStates() {
+  const remaining = BUDGET - spentPoints;
+  document.querySelectorAll('.trait-card').forEach(card => {
+    if (card.classList.contains('selected')) return;
+    const cost = parseInt(card.dataset.cost);
+    if (cost > remaining) card.classList.add('disabled');
+    else card.classList.remove('disabled');
+  });
+}
+
+// Habilitar botón solo si hay nombre Y al menos un carácter
+function updateSubmitBtn() {
+  const btn  = document.getElementById('submit-btn');
+  const name = document.getElementById('player-name').value.trim();
+  btn.disabled = (selected.size === 0 || !name);
+}
+
+document.getElementById('player-name').addEventListener('input', updateSubmitBtn);
+
+
+// CÁLCULO DE FITNESS
+
+/*
+ * calcFitness  suma los aportes de los caracteres seleccionados
+ * en el ambiente dado y normaliza a 0-100.
+ *
+ * score = (fitness_bruto / MAX_FITNESS[env]) * 100
+ */
+function calcFitness(selectedTraits, env) {
+  const table = FITNESS_TABLE[env];
+  let total   = 0;
+  selectedTraits.forEach(t => { total += (table[t] || 0); });
+  return Math.min(Math.round((total / MAX_FITNESS[env]) * 100), 100);
+}
+
+/*
+ * getInsight -> texto de retroalimentación
+ * Todos los rangos tienen interpretación biológica válida —
+ * incluso el peor puntaje ilustra algo útil sobre los trade-offs.
+ * 
+ */
+function getInsight(score, env, traits) {
+  const traitNames = [...traits].map(t => TRAITS[t].name).join(', ');
+  if (score >= 85) {
+    return `<strong>¡Estrategia excelente!</strong> Tu combinación de caracteres (${traitNames}) fue altamente adaptativa para el ambiente de <strong>${ENVIRONMENTS[env].label}</strong>.`;
+  } else if (score >= 60) {
+    return `<strong>Estrategia viable.</strong> Tu organismo sobrevivió, eyii. Esto demuestra que existen múltiples estrategias funcionales, no solo una "óptima". La diversidad biológica emerge precisamente porque distintas combinaciones pueden ser igualmente exitosas en distintos contextos :3`;
+  } else if (score >= 35) {
+    return `<strong>Estrategia costosa.</strong> Tus caracteres (${traitNames}) no coincidían bien con el ambiente revelado. Esto no significa que sean "malos" en absoluto pues en otro ambiente habrían sido una ventaja }:3`;
+  } else {
+    return `<strong>Selección negativa.</strong> Esta combinación fue poco adaptativa en el ambiente de ${ENVIRONMENTS[env].label}. Pero en un ambiente diferente, tus caracteres podrían haber sido la mejor estrategia. ¡La evolución no optimiza para todos los ambientes a la vez! >:3`;
+  }
+}
+
+
+// SUBMIT 
+
+/*
+ * submitOrganismo
+ * 1. Sortea ambiente al azar
+ * 2. Calcula fitness
+ * 3. Muestra resultados animados
+ * 4. Guarda en leaderboard
+ */
+function submitOrganismo() {
+  const name = document.getElementById('player-name').value.trim();
+  if (!name || selected.size === 0) return;
+
+  // Sortear ambiente -> la intención es que no se pueda predecir el ambiente que va a tocar === diseño divino :3
+  const envKeys = ['drought', 'predation', 'stable'];
+  const env     = envKeys[Math.floor(Math.random() * envKeys.length)];
+  const score   = calcFitness(selected, env);
+  const envData = ENVIRONMENTS[env];
+
+  // Cambiar vista
+  document.getElementById('game-form').style.display = 'none';
+  document.getElementById('result-panel').classList.add('show');
+
+  // Revelar ambiente
+  document.getElementById('env-emoji').textContent = envData.emoji;
+  document.getElementById('env-name').textContent  = envData.label;
+  document.getElementById('env-desc').textContent  = envData.desc;
+
+  // Contador animado del fitness
+  let cur = 0;
+  const el = document.getElementById('fitness-score');
+  const interval = setInterval(() => {
+    cur = Math.min(cur + Math.ceil(score / 20), score);
+    el.textContent = cur;
+    if (cur >= score) clearInterval(interval);
+  }, 40);
+
+  // Tabla de desglose,qué aportó cada carácter en este ambiente
+  const rows = document.getElementById('breakdown-rows');
+  rows.innerHTML = '';
+  selected.forEach(id => {
+    const pts = FITNESS_TABLE[env][id] || 0;
+    const t   = TRAITS[id];
+    rows.innerHTML += `
+      <div class="breakdown-row">
+        <span class="breakdown-icon">${t.icon}</span>
+        <span class="breakdown-name">${t.name}</span>
+        <span class="breakdown-pts ${pts === 0 ? 'zero' : ''}">+${pts} fitness</span>
+      </div>
+    `;
+  });
+
+  // Interpretación
+  document.getElementById('insight-box').innerHTML = getInsight(score, env, selected);
+
+  // Guardar en leaderboard
+  saveToLeaderboard({ name, score, env, traits: [...selected], timestamp: Date.now() });
+}
+
+
+// RESET 
+
+function resetGame() {
+  selected.clear();
+  spentPoints = 0;
+  document.querySelectorAll('.trait-card').forEach(c => c.classList.remove('selected', 'disabled'));
+  document.getElementById('player-name').value = '';
+  updateBudgetDisplay();
+  updateSubmitBtn();
+  document.getElementById('game-form').style.display = 'block';
+  document.getElementById('result-panel').classList.remove('show');
+}
+
+
+// LEADERBOARD (localStorage)
+/*
+ * Uso localStorage porque la actividad es presencial y no necesitamos servidor.
+ * Para una versión online con múltiples máquinas, habría que cambiar esto
+ * por una API (Firebase, Supabase, etc.)
+ */
+
+function saveToLeaderboard(entry) {
+  try {
+    const raw     = localStorage.getItem(STORAGE_KEY);
+    let entries   = raw ? JSON.parse(raw) : [];
+    entries.push(entry);
+    entries.sort((a, b) => b.score - a.score);
+    if (entries.length > 100) entries = entries.slice(0, 100); // límite razonable creo
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  } catch(e) {
+    // No romper la app si el storage falla (ej. modo incógnito con bloqueo)
+    console.warn('localStorage no disponible:', e);
+  }
+}
+
+function loadLeaderboard() {
+  const container = document.getElementById('lb-list');
+  container.innerHTML = '<div class="empty-lb"><div class="big">⏳</div><div>Cargando...</div></div>';
+
+  try {
+    const raw     = localStorage.getItem(STORAGE_KEY);
+    const entries = raw ? JSON.parse(raw) : [];
+
+    if (entries.length === 0) {
+      container.innerHTML = '<div class="empty-lb"><div class="big">🔬</div><div>Aún no hay organismos registrados. ¡Sé el primero!</div></div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    entries.forEach((e, i) => {
+      const rank      = i + 1;
+      const rankClass = rank <= 3 ? 'top' + rank : '';
+      const medal     = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '#' + rank;
+      const traitIcons = e.traits.map(t => TRAITS[t] ? TRAITS[t].icon : '').join('');
+      const traitNames = e.traits.map(t => TRAITS[t] ? TRAITS[t].name : t).join(', ');
+      const envData    = ENVIRONMENTS[e.env] || {};
+
+      container.innerHTML += `
+        <div class="lb-entry ${rankClass}">
+          <div class="lb-rank ${rankClass}">${medal}</div>
+          <div>
+            <div class="lb-name">${escapeHtml(e.name)}</div>
+            <div class="lb-traits">${traitIcons} ${traitNames}</div>
+          </div>
+          <div>
+            <div class="lb-env">${envData.emoji || '?'}</div>
+            <div class="lb-env-label">${envData.label || e.env}</div>
+          </div>
+          <div>
+            <div class="lb-score">${e.score}</div>
+            <div class="lb-score-label">FITNESS</div>
+          </div>
+        </div>
+      `;
+    });
+  } catch(err) {
+    container.innerHTML = '<div class="empty-lb"><div>Error al cargar. Intenta de nuevo.</div></div>';
+    console.error('loadLeaderboard:', err);
+  }
+}
+
+// Limpiar todos los registros
+function clearLeaderboard() {
+  if (!confirm('¿Seguro que quieres borrar todos los registros?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  loadLeaderboard();
+}
+
+// Sanitizar HTML para evitar XSS con nombres de usuario!!!! 8IMPORTANTE
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+
+// NAVEGACIÓN
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${name}')"]`).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'lb') loadLeaderboard();
+}
+
+
+// INIT 
+updateBudgetDisplay();
+</script>
+</body>
+</html>
