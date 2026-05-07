@@ -48,16 +48,22 @@ El fitness se calcula en dos términos.
 
 El primero es la suma de las contribuciones individuales de cada carácter según el ambiente, donde los valores pueden ser negativos (un rasgo activamente maladaptativo en ese contexto):
 
-$$fitness_{bruto} = \sum_{i} w_i(env)$$
+```
+fitness_bruto = Σ w_i(env)
+```
 
 El segundo agrega las interacciones entre pares de rasgos que comparten sustrato fisiológico. Algunos pares se frenan mutuamente (covarianza negativa), otros son coherentes entre sí (covarianza positiva):
 
-$$fitness = \sum_{i} w_i(env) + \sum_{i<j} cov_{ij}(env)$$
+```
+fitness_bruto = Σ w_i(env)  +  Σ cov_ij(env)
+                 i              i<j
+```
 
 Finalmente se normaliza sobre el máximo alcanzable por ambiente:
 
-$$fitness = \frac{fitness_{bruto}}{fitness_{max}(env)} \cdot 100$$
-
+```
+fitness = ( fitness_bruto / fitness_max(env) ) × 100
+```
 El resultado es un índice entre 0 y 100. El máximo varía por ambiente porque cada uno tiene una combinación óptima distinta.
 
 ---
