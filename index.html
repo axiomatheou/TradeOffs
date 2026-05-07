@@ -17,6 +17,14 @@
   Este código se realizó con muy mínima ayuda de IA, pero mucho StackOverflow =P
 
   Christos anesti! Alithos anesti! +
+
+  ### Cambios v2 
+  * Rasgos nuevos: Camuflaje/Coloración llamativa, Agilidad/Reservas de grasa
+  * Rasgos eliminados: Muchos/Pocos huevos, Solitario/Gregario
+  * FITNESS_TABLE con valores negativos (rasgos activamente maladaptativos)
+  * Términos de covarianza entre pares fisiológicamente relacionados!
+  * Restricciones absolutas: pares mutuamente excluyentes se bloquean en UI
+  * MAX_FITNESS recalculado para los nuevos rasgos y covarianzas
 -->
 <html lang="es">
 <head>
@@ -25,20 +33,21 @@
 <title>Historias de Vida</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@300;700;900&display=swap" rel="stylesheet">
 <style>
-  /* 
+  :root {
+    /* 
    * Variables de color
    */
-  :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --surface2: #1a1a26;
-    --border: #2a2a40;
-    --accent: #00ff88;     
-    --accent2: #ff6b35;    
-    --accent3: #7c6bff;   
-    --text: #e8e8f0;
-    --muted: #6a6a8a;
-    --warn: #ffcc00;       
+    --bg:      #090c0b;          
+    --surface: #0f1512;          
+    --surface2:#161e1a;         
+    --border:  #243028;          
+    --accent:  #3dffa0;        
+    --accent2: #e8a238;    
+    --accent3: #d45fa8;        
+    --text:    #ddeae3;     
+    --muted:   #5a7a68;       
+    --warn:    #d4a040;          
+    --neg:     #e05050;         
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -51,27 +60,29 @@
     overflow-x: hidden;
   }
 
-  /* Gradientes de fondo para que no se vea tan plano */
+
+  /* Gradientes de fondo para que no se vea tan plano, nuevos colores :p */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(0,255,136,0.06) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 50% at 80% 90%, rgba(124,107,255,0.07) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 40% at 60% 40%, rgba(255,107,53,0.04) 0%, transparent 60%);
+      radial-gradient(ellipse 55% 38% at 15% 8%,  rgba(61,255,160,0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 48% 48% at 85% 92%, rgba(212,95,168,0.08) 0%, transparent 65%),
+      radial-gradient(ellipse 35% 35% at 55% 42%, rgba(232,162,56,0.05) 0%, transparent 60%);
     pointer-events: none;
     z-index: 0;
   }
+
 
   /* Cuadrícula de fondo sutil - GooglePages */
   .grid-bg {
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
+      linear-gradient(rgba(61,255,160,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(61,255,160,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
     pointer-events: none;
     z-index: 0;
   }
@@ -84,7 +95,8 @@
     padding: 2rem 1.5rem;
   }
 
-  /* HEADER   */
+
+  /* HEADER     */
   .header {
     text-align: center;
     margin-bottom: 3rem;
@@ -98,6 +110,8 @@
     text-transform: uppercase;
     margin-bottom: 1rem;
   }
+
+
 
   /* Nombre del autor debajo del título :P */
   .header .author-tag {
@@ -128,7 +142,8 @@
     margin: 0 auto;
   }
 
-  /* TABS!  */
+
+  /* TABS!   */
   .tabs {
     display: flex;
     gap: 0.5rem;
@@ -157,6 +172,8 @@
   .tab-content { display: none; animation: fadeUp 0.4s ease; }
   .tab-content.active { display: block; }
 
+
+
   /* }CAJA DE ESCENARIO!!  */
   .scenario-box {
     background: var(--surface);
@@ -177,6 +194,8 @@
   }
 
   .scenario-box p { font-size: 0.85rem; line-height: 1.7; color: var(--text); }
+
+
 
   /* INPUT DE NOMBRE (modificar después !!)  */
   .form-group { margin-bottom: 1.5rem; }
@@ -205,6 +224,8 @@
 
   .form-group input:focus { border-color: var(--accent); }
 
+
+
   /* BARRA DE PRESUPUESTO
    * Cambia de color según puntos restantes según el gradiente de
    */
@@ -229,7 +250,7 @@
   }
 
   .budget-number.low   { color: var(--accent2); }
-  .budget-number.empty { color: #ff3333; }
+  .budget-number.empty { color: #e05050; }
 
   .budget-bar-wrap { flex: 1; }
 
@@ -252,7 +273,9 @@
   }
 
   .budget-bar-fill.low   { background: linear-gradient(90deg, var(--accent2), var(--warn)); }
-  .budget-bar-fill.empty { background: #ff3333; }
+  .budget-bar-fill.empty { background: #e05050; }
+
+
 
   /* SECCIONES Y TARJETAS DE CARACTERES!   */
   .trait-section { margin-bottom: 2rem; }
@@ -282,6 +305,14 @@
     padding: 0.15rem 0.5rem;
     border-radius: 20px;
     letter-spacing: 0.1em;
+  }
+
+
+  /* Badge especial para pares mutuamente excluyentes  - CORREGIR */
+  .vs-badge.exclusive {
+    color: var(--neg);
+    border-color: rgba(224,80,80,0.3);
+    background: rgba(224,80,80,0.07);
   }
 
   .trait-pair {
@@ -315,12 +346,20 @@
 
   .trait-card.selected {
     border-color: var(--accent);
-    background: rgba(0,255,136,0.05);
+    background: rgba(61,255,160,0.05);
   }
 
   .trait-card.selected::before { opacity: 0.03; }
 
   .trait-card.disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Estado bloqueado por exclusión mutua, nuevo */
+  .trait-card.excluded {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+    border-color: rgba(224,80,80,0.3);
+  }
 
   .trait-card-inner { position: relative; z-index: 1; }
   .trait-icon { font-size: 1.8rem; margin-bottom: 0.5rem; display: block; }
@@ -349,7 +388,7 @@
   }
 
   .trait-card.selected .trait-cost {
-    background: rgba(0,255,136,0.1);
+    background: rgba(61,255,160,0.1);
     border-color: var(--accent);
     color: var(--accent);
   }
@@ -376,6 +415,23 @@
 
   .trait-card.selected .check-mark { opacity: 1; transform: scale(1); }
 
+
+  /* Etiqueta de exclusión mutua. aparece al seleccionar el opuesto */
+  .exclude-label {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    font-size: 0.6rem;
+    color: var(--neg);
+    letter-spacing: 0.05em;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 2;
+  }
+
+  .trait-card.excluded .exclude-label { opacity: 1; }
+
+
   /* BOTÓN ENVIAR     */
   .submit-btn {
     width: 100%;
@@ -393,8 +449,10 @@
     margin-top: 1.5rem;
   }
 
-  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,255,136,0.3); }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(61,255,160,0.25); }
   .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+
 
   /* RESULTADOS   */
   .result-panel { display: none; animation: fadeUp 0.5s ease; }
@@ -452,6 +510,7 @@
     margin-bottom: 1rem;
   }
 
+
   .breakdown-row {
     display: flex;
     align-items: center;
@@ -464,12 +523,27 @@
   .breakdown-row:last-child { border-bottom: none; }
   .breakdown-icon { font-size: 1.2rem; }
   .breakdown-name { flex: 1; }
-  .breakdown-pts { color: var(--accent); font-weight: 700; }
-  .breakdown-pts.zero { color: var(--muted); }
+  .breakdown-pts { font-weight: 700; }
+  .breakdown-pts.positive { color: var(--accent); }
+  .breakdown-pts.zero     { color: var(--muted); }
+  .breakdown-pts.negative { color: var(--neg); }
+
+
+  /* Sección de covarianzas en el desglose, determinar más co */
+  .breakdown-divider {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.75rem 0 0.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .breakdown-row.cov-row .breakdown-name { color: var(--muted); font-style: italic; font-size: 0.75rem; }
 
   .insight-box {
-    background: rgba(124,107,255,0.08);
-    border: 1px solid rgba(124,107,255,0.3);
+    background: rgba(212,95,168,0.07);
+    border: 1px solid rgba(212,95,168,0.25);
     border-radius: 8px;
     padding: 1rem 1.5rem;
     font-size: 0.8rem;
@@ -495,6 +569,7 @@
 
   .play-again-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+
   /* LEADERBOARD (CORREGIR!!!!!!!!!!!) */
   .leaderboard-header {
     display: flex;
@@ -504,6 +579,7 @@
   }
 
   .leaderboard-header h2 { font-family: 'Unbounded', sans-serif; font-size: 1rem; font-weight: 700; }
+
 
   .lb-controls { display: flex; gap: 0.5rem; align-items: center; }
 
@@ -534,7 +610,7 @@
     transition: all 0.2s;
   }
 
-  .clear-btn:hover { border-color: #ff3333; color: #ff3333; }
+  .clear-btn:hover { border-color: #e05050; color: #e05050; }
 
   .lb-entry {
     display: grid;
@@ -549,13 +625,14 @@
     animation: fadeUp 0.3s ease;
   }
 
-  .lb-entry.top1 { border-color: rgba(255,204,0,0.4); background: rgba(255,204,0,0.04); }
-  .lb-entry.top2 { border-color: rgba(200,200,220,0.3); }
-  .lb-entry.top3 { border-color: rgba(255,107,53,0.3); }
+  .lb-entry.top1 { border-color: rgba(212,160,64,0.45); background: rgba(212,160,64,0.05); }
+  .lb-entry.top2 { border-color: rgba(180,200,185,0.3); }
+  .lb-entry.top3 { border-color: rgba(232,162,56,0.3); }
+
 
   .lb-rank { font-family: 'Unbounded', sans-serif; font-size: 0.8rem; font-weight: 700; color: var(--muted); text-align: center; }
   .lb-rank.top1 { color: var(--warn); }
-  .lb-rank.top2 { color: #c8c8dc; }
+  .lb-rank.top2 { color: #a8c0b0; }
   .lb-rank.top3 { color: var(--accent2); }
 
   .lb-name { font-size: 0.85rem; font-weight: 700; }
@@ -579,10 +656,11 @@
     color: var(--muted);
   }
 
+
   /* Nota pedagógica sobre diversidad ----> el punto central de la actividad */
   .diversity-note {
-    background: rgba(0,255,136,0.05);
-    border: 1px solid rgba(0,255,136,0.2);
+    background: rgba(61,255,160,0.04);
+    border: 1px solid rgba(61,255,160,0.18);
     border-radius: 8px;
     padding: 1rem 1.5rem;
     font-size: 0.75rem;
@@ -614,7 +692,6 @@
     to   { opacity: 1; transform: scale(1); }
   }
 
- 
   @media (max-width: 600px) {
     .trait-pair { grid-template-columns: 1fr; }
     .lb-entry { grid-template-columns: 30px 1fr auto; }
@@ -634,11 +711,14 @@
     <p>Diseña un organismo. Distribuye tus recursos entre caracteres que compiten entre sí. Sobrevive al ambiente. Pero recuerda: no hay una solución óptima única.</p>
   </div>
 
+
   <!-- TABS -->
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('game')">▶ Jugar</button>
     <button class="tab-btn" onclick="switchTab('lb')">🏆 Puntuaciones</button>
   </div>
+
+
 
   <!-- ===== TAB ===== -->
   <div class="tab-content active" id="tab-game">
@@ -646,7 +726,7 @@
 
       <div class="scenario-box">
         <h3>Escenario (!)</h3>
-        <p>Eres un organismo que quiere sobrevivir. Tienes <strong>10 puntos</strong> para invertir en caracteres antes de que el ambiente sea revelado. RECUERDAA: Los recursos son limitados por lo que invertir en un carácter significa sacrificar otro. ¿Cuál es tu estrategia?</p>
+        <p>Eres un organismo que quiere sobrevivir. Tienes <strong>10 puntos</strong> para invertir en caracteres antes de que el ambiente sea revelado. RECUERDA: Los recursos son limitados, por lo que invertir en un carácter significa sacrificar otro. Algunos caracteres son <strong>mutuamente excluyentes</strong> — no pueden coexistir en el mismo organismo. ¿Cuál es tu estrategia?</p>
       </div>
 
       <div class="form-group">
@@ -668,7 +748,7 @@
         </div>
       </div>
 
-      <!-- Dispersión vs Reproducción !-->
+       <!-- Dispersión vs Reproducción !-->
       <div class="trait-section">
         <div class="trait-section-header">
           <h3>Dispersión vs Reproducción</h3>
@@ -677,131 +757,142 @@
         <div class="trait-pair">
           <div class="trait-card" onclick="toggleTrait(this)" data-id="wings" data-cost="3">
             <div class="check-mark">✓</div>
+            <div class="exclude-label">EXCLUIDO</div>
             <div class="trait-card-inner">
               <span class="trait-icon">🪶</span>
               <div class="trait-name">Alas Grandes</div>
-              <div class="trait-desc">Mayor capacidad de vuelo. Permite escapar a nuevos territorios cuando los recursos escasean.</div>
+              <div class="trait-desc">Mayor capacidad de vuelo. Permite escapar a nuevos territorios cuando los recursos escasean. Costoso cuando no hay necesidad de moverse.</div>
               <span class="trait-cost">3 puntos</span>
             </div>
           </div>
           <div class="trait-card" onclick="toggleTrait(this)" data-id="gonads" data-cost="3">
             <div class="check-mark">✓</div>
+            <div class="exclude-label">EXCLUIDO</div>
             <div class="trait-card-inner">
               <span class="trait-icon">🥚</span>
               <div class="trait-name">Gónadas Grandes</div>
-              <div class="trait-desc">Alta inversión reproductiva. Más descendencia cuando el ambiente es favorable.</div>
+              <div class="trait-desc">Alta inversión reproductiva. Más descendencia cuando el ambiente es favorable. Malgastar recursos en reproducirse durante una crisis puede ser fatal.</div>
               <span class="trait-cost">3 puntos</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!--Defensa vs Crecimiento -->
+      <!-- Defensa vs Dominancia -->
       <div class="trait-section">
         <div class="trait-section-header">
-          <h3>Defensa vs Crecimiento</h3>
+          <h3>Defensa vs Dominancia competitiva</h3>
           <span class="vs-badge">TRADE-OFF</span>
         </div>
         <div class="trait-pair">
           <div class="trait-card" onclick="toggleTrait(this)" data-id="armor" data-cost="2">
             <div class="check-mark">✓</div>
+            <div class="exclude-label">EXCLUIDO</div>
             <div class="trait-card-inner">
               <span class="trait-icon">🛡️</span>
               <div class="trait-name">Coraza</div>
-              <div class="trait-desc">Protección física contra depredadores. Reduce la movilidad pero aumenta la supervivencia.</div>
+              <div class="trait-desc">Protección física contra depredadores. Reduce la movilidad y tiene un costo energético permanente aunque no haya depredadores.</div>
               <span class="trait-cost">2 puntos</span>
             </div>
           </div>
           <div class="trait-card" onclick="toggleTrait(this)" data-id="size" data-cost="2">
             <div class="check-mark">✓</div>
+            <div class="exclude-label">EXCLUIDO</div>
             <div class="trait-card-inner">
               <span class="trait-icon">💪</span>
               <div class="trait-name">Tamaño Corporal</div>
-              <div class="trait-desc">Mayor masa corporal. Ventaja competitiva para acceso a recursos y pareja.</div>
+              <div class="trait-desc">Mayor masa corporal. Ventaja competitiva para acceso a recursos y pareja. Ser grande también te hace más visible para los depredadores.</div>
               <span class="trait-cost">2 puntos</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Estrategia r vs K -->
+      <!-- Visibilidad (MUTUAMENTE EXCLUYENTES) -->
       <div class="trait-section">
         <div class="trait-section-header">
-          <h3>Cantidad vs Calidad de descendencia</h3>
-          <span class="vs-badge">TRADE-OFF</span>
+          <h3>Visibilidad</h3>
+          <span class="vs-badge exclusive">⚠ EXCLUYENTES</span>
         </div>
         <div class="trait-pair">
-          <div class="trait-card" onclick="toggleTrait(this)" data-id="many-eggs" data-cost="2">
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="camouflage" data-cost="2" data-excludes="coloration">
             <div class="check-mark">✓</div>
+            <div class="exclude-label">EXCLUIDO</div>
             <div class="trait-card-inner">
-              <span class="trait-icon">🫧</span>
-              <div class="trait-name">Muchos huevos pequeños</div>
-              <div class="trait-desc">Alta fecundidad. Estrategia r: muchos hijos con poca inversión individual.</div>
+              <span class="trait-icon">🦎</span>
+              <div class="trait-name">Camuflaje</div>
+              <div class="trait-desc">Coloración críptica. Reduces tu visibilidad para depredadores, pero también para posibles parejas. No puedes ser invisible y llamativo al mismo tiempo.</div>
               <span class="trait-cost">2 puntos</span>
             </div>
           </div>
-          <div class="trait-card" onclick="toggleTrait(this)" data-id="few-eggs" data-cost="2">
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="coloration" data-cost="2" data-excludes="camouflage">
             <div class="check-mark">✓</div>
+            <div class="exclude-label">EXCLUIDO</div>
             <div class="trait-card-inner">
-              <span class="trait-icon">🥚</span>
-              <div class="trait-name">Pocos huevos grandes</div>
-              <div class="trait-desc">Baja fecundidad, alta inversión por hijo. Estrategia K: descendencia robusta.</div>
+              <span class="trait-icon">🦚</span>
+              <div class="trait-name">Coloración Llamativa</div>
+              <div class="trait-desc">Señales visuales brillantes. Atraes parejas con mayor facilidad, pero también llamas la atención de los depredadores.</div>
               <span class="trait-cost">2 puntos</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Smelparidad aproximada vs Iterarparidad -->
+
+      <!-- Escape vs Resistencia -->
       <div class="trait-section">
         <div class="trait-section-header">
-          <h3>Tiempo de vida</h3>
+          <h3>Escape vs Resistencia a la escasez</h3>
           <span class="vs-badge">TRADE-OFF</span>
         </div>
         <div class="trait-pair">
-          <div class="trait-card" onclick="toggleTrait(this)" data-id="early" data-cost="1">
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="agility" data-cost="2">
             <div class="check-mark">✓</div>
+            <div class="exclude-label">EXCLUIDO</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">⚡</span>
+              <div class="trait-name">Agilidad</div>
+              <div class="trait-desc">Cuerpo ligero y rápido. Excelente para escapar depredadores y buscar recursos activamente. Ser ágil implica no tener grandes reservas energéticas acumuladas.</div>
+              <span class="trait-cost">2 puntos</span>
+            </div>
+          </div>
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="fat" data-cost="2">
+            <div class="check-mark">✓</div>
+            <div class="exclude-label">EXCLUIDO</div>
+            <div class="trait-card-inner">
+              <span class="trait-icon">🐻</span>
+              <div class="trait-name">Reservas de Grasa</div>
+              <div class="trait-desc">Energía almacenada para sobrevivir períodos de escasez. El peso adicional reduce tu velocidad y te hace más fácil de detectar y atrapar.</div>
+              <span class="trait-cost">2 puntos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tiempo de vida (MUTUAMENTE EXCLUYENTES) -->
+      <div class="trait-section">
+        <div class="trait-section-header">
+          <h3>Tiempo de vida reproductivo</h3>
+          <span class="vs-badge exclusive">⚠ EXCLUYENTES</span>
+        </div>
+        <div class="trait-pair">
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="early" data-cost="1" data-excludes="longevity">
+            <div class="check-mark">✓</div>
+            <div class="exclude-label">EXCLUIDO</div>
             <div class="trait-card-inner">
               <span class="trait-icon">⚡</span>
               <div class="trait-name">Madurez Temprana</div>
-              <div class="trait-desc">Reproducción rápida antes de morir. Prioriza el presente sobre el futuro.</div>
+              <div class="trait-desc">Reproducción rápida antes de morir. Prioriza el presente sobre el futuro. Útil cuando el ambiente es impredecible... si no te reproduces hoy, quizá no puedas mañana.</div>
               <span class="trait-cost">1 punto</span>
             </div>
           </div>
-          <div class="trait-card" onclick="toggleTrait(this)" data-id="longevity" data-cost="2">
+          <div class="trait-card" onclick="toggleTrait(this)" data-id="longevity" data-cost="2" data-excludes="early">
             <div class="check-mark">✓</div>
+            <div class="exclude-label">EXCLUIDO</div>
             <div class="trait-card-inner">
               <span class="trait-icon">⏳</span>
               <div class="trait-name">Longevidad</div>
-              <div class="trait-desc">Vida larga. Múltiples ciclos reproductivos posibles si el ambiente es estable.</div>
-              <span class="trait-cost">2 puntos</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Comportamiento social!-->
-      <div class="trait-section">
-        <div class="trait-section-header">
-          <h3>Comportamiento social</h3>
-          <span class="vs-badge">TRADE-OFF</span>
-        </div>
-        <div class="trait-pair">
-          <div class="trait-card" onclick="toggleTrait(this)" data-id="solitary" data-cost="1">
-            <div class="check-mark">✓</div>
-            <div class="trait-card-inner">
-              <span class="trait-icon">🦎</span>
-              <div class="trait-name">Solitario</div>
-              <div class="trait-desc">Sin competencia por recursos internos al grupo. Más recursos individuales disponibles.</div>
-              <span class="trait-cost">1 punto</span>
-            </div>
-          </div>
-          <div class="trait-card" onclick="toggleTrait(this)" data-id="gregarious" data-cost="2">
-            <div class="check-mark">✓</div>
-            <div class="trait-card-inner">
-              <span class="trait-icon">🐜</span>
-              <div class="trait-name">Gregario</div>
-              <div class="trait-desc">Protección en grupo. Detección colectiva de depredadores y cooperación.</div>
+              <div class="trait-desc">Vida larga con múltiples ciclos reproductivos. Apuesta al futuro. Solo vale la pena si el ambiente es lo suficientemente estable para que llegues a aprovecharlo.</div>
               <span class="trait-cost">2 puntos</span>
             </div>
           </div>
@@ -812,6 +903,7 @@
         Lanzar organismo al ambiente →
       </button>
     </div>
+
 
     <!--PANEL DE RESULTADOS (aparece tras submitOrganismo) -->
     <div class="result-panel" id="result-panel">
@@ -837,6 +929,8 @@
     </div>
   </div>
 
+
+
   <!-- ===== LEADERBOARD ===== -->
   <div class="tab-content" id="tab-lb">
     <div class="leaderboard-header">
@@ -851,7 +945,7 @@
 
     <div class="diversity-note">
       <strong>Observa la diversidad:</strong> Distintas estrategias pueden producir fitness similar.
-      Esto ilustra por qué la selección natural mantiene variación en las poblaciones ->
+      Esto ilustra por qué la selección natural mantiene variación en las poblaciones →
       no existe un fenotipo único óptimo cuando el ambiente es impredecible ^•ﻌ•^
     </div>
 
@@ -871,19 +965,30 @@
 
 </div><!-- /container -->
 
+
+
 <script>
 /*
  * ============================================================
- * LÓGICA PRINCIPAL
+ * LÓGICA PRINCIPAL v2
  * Santiago Caballero Rosas
  * ============================================================
  *
  * Flujo del juego:
  *   1. El usuario selecciona caracteres gastando hasta 10 puntos
+ *      (algunos pares son mutuamente excluyentes → se bloquean en UI)
  *   2. Al enviar, se sortea un ambiente al azar (de 3)
- *   3. fitness = Σ puntaje(carácter, ambiente) normalizado a 0-100
- *   4. Resultado → localStorage → leaderboard
+ *   3. fitness bruto = Σ tabla[carácter][ambiente]
+ *                    + Σ covarianza[par][ambiente] si ambos están seleccionados
+ *   4. fitness normalizado a 0-100 sobre MAX_FITNESS[env]
+ *   5. Resultado → localStorage → leaderboard
  *
+ * Cambios v2:
+ *   - FITNESS_TABLE con valores negativos (rasgos maladaptativos)
+ *   - COVARIANCE_TABLE: interacciones entre pares de rasgos
+ *   - MUTUAL_EXCLUSIONS: pares que se bloquean mutuamente en UI, error que no tenía sentido en la v1
+ *   - Rasgos: camouflage, coloration, agility, fat reemplazan many-eggs, few-eggs, solitary, gregarious
+ *    
  * ============================================================
  */
 
@@ -893,84 +998,183 @@ const BUDGET = 10; // presupuesto total de puntos por jugador
 
 // Catálogo de caracteres disponibles
 const TRAITS = {
-  wings:       { name: 'Alas Grandes',           icon: '🪶', cost: 3 },
-  gonads:      { name: 'Gónadas Grandes',         icon: '🥚', cost: 3 },
-  armor:       { name: 'Coraza',                  icon: '🛡️', cost: 2 },
-  size:        { name: 'Tamaño Corporal',         icon: '💪', cost: 2 },
-  'many-eggs': { name: 'Muchos huevos pequeños',  icon: '🫧', cost: 2 },
-  'few-eggs':  { name: 'Pocos huevos grandes',   icon: '🥚', cost: 2 },
-  early:       { name: 'Madurez Temprana',        icon: '⚡', cost: 1 },
-  longevity:   { name: 'Longevidad',              icon: '⏳', cost: 2 },
-  solitary:    { name: 'Solitario',               icon: '🦎', cost: 1 },
-  gregarious:  { name: 'Gregario',                icon: '🐜', cost: 2 }
+  wings:      { name: 'Alas Grandes',          icon: '🪶', cost: 3 },
+  gonads:     { name: 'Gónadas Grandes',        icon: '🥚', cost: 3 },
+  armor:      { name: 'Coraza',                 icon: '🛡️', cost: 2 },
+  size:       { name: 'Tamaño Corporal',        icon: '💪', cost: 2 },
+  camouflage: { name: 'Camuflaje',              icon: '🦎', cost: 2 },
+  coloration: { name: 'Coloración Llamativa',   icon: '🦚', cost: 2 },
+  agility:    { name: 'Agilidad',               icon: '⚡', cost: 2 },
+  fat:        { name: 'Reservas de Grasa',      icon: '🐻', cost: 2 },
+  early:      { name: 'Madurez Temprana',       icon: '⚡', cost: 1 },
+  longevity:  { name: 'Longevidad',             icon: '⏳', cost: 2 }
 };
 
 /*
- * Tabla de contribución al fitness por carácter y ambiente.
- * Escala 0-3: cuánto aporta ese carácter a sobrevivir en ese contexto:
+ * FITNESS_TABLE (Tabla de contribución al fitness por carácter y ambiente)
+ * Escala: -3 a +3.
  *
- *   drought   → favorece dispersión, madurez temprana, tamaño individual
- *   predation → favorece coraza, gregariedad (detección grupal)
- *   stable    → favorece reproducción, longevidad, estrategia K
+ * Valores negativos = el carácter es activamente maladaptativo en ese contexto (no solo neutro).
+ *
+ * drought   → favorece dispersión, reservas, madurez temprana
+ *             penaliza inversión reproductiva cara y rasgos sin retorno
+ * predation → favorece defensa, camuflaje, escape activo
+ *             penaliza visibilidad y lentitud
+ * stable    → favorece reproducción e inversión a largo plazo
+ *             penaliza rasgos de emergencia costosos sin amenaza
  *
  * Basado en teoría de historias de vida (Stearns 1989, Roff 2002). También me apoyé en A Biologist's Guide to Mathemathical Modelling de Otto y Day.
- *
  */
 const FITNESS_TABLE = {
   drought: {
-    wings: 3, gonads: 0, armor: 1, size: 2,
-    'many-eggs': 0, 'few-eggs': 2, early: 3, longevity: 0,
-    solitary: 2, gregarious: 0
+    wings:       3,   // dispersarse es la salida principal
+    gonads:     -1,   // reproducirse durante escasez consume recursos críticos
+    armor:       0,   // protege pero no resuelve la falta de recursos
+    size:        2,   // dominancia en competencia intraespecífica 
+    camouflage:  0,   // irrelevante para la presión dominante
+    coloration: -1,   // gasta energía sin ningún beneficio en sequía
+    agility:     2,   // busca recursos activamente, evita competidores
+    fat:         3,   // reservas energéticas = sobrevivir la escasez directamente
+    early:       3,   // reproduce antes de que el ambiente colapse del todo
+    longevity:  -1    // invertir en un futuro incierto tiene costo de oportunidad
   },
   predation: {
-    wings: 1, gonads: 1, armor: 3, size: 0,
-    'many-eggs': 0, 'few-eggs': 1, early: 1, longevity: 1,
-    solitary: 0, gregarious: 3
+    wings:       1,   // escape aéreo útil, pero no es la defensa principal
+    gonads:      0,   // neutro: el depredador no discrimina por inversión reproductiva
+    armor:       3,   // defensa estructural directa contra ataques
+    size:       -1,   // mayor tamaño = mayor detectabilidad y blanco más fácil
+    camouflage:  3,   // invisibilidad es la primera línea de supervivencia
+    coloration: -2,   // llama la atención
+    agility:     3,   // escape activo cuando el camuflaje falla
+    fat:        -1,   // peso extra reduce velocidad de escape y aumenta visibilidad
+    early:       1,   // reproducirse rápido antes de ser depredado ´puede ser util 
+    longevity:   0    // neutro: vivir más no ayuda si el depredador está siempre
   },
   stable: {
-    wings: 0, gonads: 3, armor: 0, size: 2,
-    'many-eggs': 2, 'few-eggs': 1, early: 0, longevity: 3,
-    solitary: 1, gregarious: 1
+    wings:      -1,   // costo energético sin beneficio cuando no hay necesidad de huir
+    gonads:      3,   // máxima inversión reproductiva cuando el ambiente lo permite
+    armor:       0,   // neutro: pocos depredadores, la defensa no aporta
+    size:        2,   // ventaja competitiva por territorio, recursos y acceso a pareja
+    camouflage:  0,   // neutro: sin presión de depredación intensa
+    coloration:  2,   // atraer pareja en ambiente seguro tiene alto retorno
+    agility:     0,   // neutro: no hay urgencia de huir ni escasez que buscar
+    fat:         1,   // reserva moderadamente útil como "buffer" ante variaciones menores
+    early:      -1,   // madurar rápido desperdicia el potencial de ciclos reproductivos largos
+    longevity:   3    // múltiples ciclos reproductivos son la estrategia ganadora aquí
   }
 };
 
 /*
- * Fitness máximo alcanzable con 10 puntos en cada ambiente.
- * Usado para normalizar el puntaje a 0-100.
- * Calculado manualmente con la combinación óptima por ambiente:
- *   drought:   alas(3) + early(3) + size(2) + few-eggs(2) = 14 fitness bruto
- *   predation: armor(3) + gregarious(3) + wings(1) + gonads(1) + few-eggs(1) = 11
- *   stable:    gonads(3) + longevity(3) + size(2) + many-eggs(2) = 13 (10 pts exacto)
+ * COVARIANCE_TABLE
+ * Interacciones entre pares de rasgos que comparten sustrato fisiológico.
+ * Se suma al fitness bruto cuando AMBOS rasgos del par están seleccionados.
+ *
+ * Negativo (antagonismo): tener ambos juntos es peor que la suma de sus partes.
+ * Positivo (sinergia): la combinación es coherente fisiológicamente.
+ *
+ * La clave es "idA:idB" con idA < idB alfabéticamente para evitar duplicados (!!!!!!!!!!!) CUIDADO CON ESTE PROBLEMA
+ *
+ * Razones:_
+ *   gonads+longevity  : trade-off reproducción-soma(Kirkwood 1977)
+ *   wings+gonads      : trade-off dispersión-reproducción (Roff 1994)
+ *   armor+agility     : masa estructural penaliza movilidad físicamente
+ *   fat+agility       : antagonismo masa-velocidad, directo y físico
+ *   fat+longevity     : coherencia estrategia de resistencia
+ *   gonads+coloration : coherencia estrategia reproductiva en ambiente estable
  */
-const MAX_FITNESS = { drought: 14, predation: 11, stable: 13 };
+const COVARIANCE_TABLE = {
+  'gonads:longevity': {
+    drought:   -1,
+    predation: -1,
+    stable:    -2   // reproducción agota soma, en estable el costo es mayor porque ambos compiten al máximo
+  },
+  'gonads:wings': {
+    drought:   -1,
+    predation: -1,
+    stable:    -1   // dispersión y reproducción comparten energía somática
+  },
+  'agility:armor': {
+    drought:    0,
+    predation: -1,  // en depredación ambos son útiles pero se frenan mutuamente
+    stable:     0
+  },
+  'agility:fat': {
+    drought:   -1,
+    predation: -1,
+    stable:    -1   // antagonismo físico universal masa vs velocidad
+  },
+  'fat:longevity': {
+    drought:   +1,  // sinergia, resistencia a escasez + vida larga = estrategia coherente
+    predation:  0,
+    stable:    +1
+  },
+  'coloration:gonads': {
+    drought:    0,
+    predation:  0,
+    stable:    +1   // coherencia, ambos apuntan a maximizar éxito reproductivo en buen ambiente
+  }
+};
+
+
+
+/*
+ * Pares mutuamente excluyentes (!)
+ * No pueden coexistir independientemente del presupuesto.
+ * Si se selecciona uno, el otro se bloquea en la UI
+ */
+const MUTUAL_EXCLUSIONS = {
+  camouflage: 'coloration',
+  coloration: 'camouflage',
+  early:      'longevity',
+  longevity:  'early'
+};
+
+
+/*
+ * MAX_FITNESS por ambiente.
+ * Calculado como el máximo alcanzable con exactamente 10 puntos, incluyendo covarianzas, sin violar exclusiones mutuas
+ *
+ * drought:   wings(3)+fat(3)+early(3)+agility(2)+size(2) = 13 bruto, 10pts
+ *            cov: agility+fat = -1 -> MAX = 12
+ * predation: armor(3)+camouflage(3)+agility(3)+wings(1)+early(1) = 11 bruto, 10pts
+ *            cov: agility+armor = -1 -> MAX = 10
+ * stable:    gonads(3)+longevity(3)+size(2)+coloration(2) = 10 bruto, 9pts
+ *            cov: gonads+longevity(-2) + coloration+gonads(+1) = -1 -> 9
+ *            con fat(2) en lugar de longevity: gonads(3)+size(2)+coloration(2)+fat(1)+early(-1)=7, 10pts
+ *            mejor: gonads(3)+size(2)+coloration(2)+longevity(3) = 10, cov=-1 -> 9
+ *            o: gonads(3)+size(2)+coloration(2)+fat(1) sin early = 8pts, falta 2 -> +armor(0) = 8, 10pts
+ *            Máximo = 9
+ */
+const MAX_FITNESS = { drought: 12, predation: 10, stable: 9 };
+
 
 // Datos de cada ambiente para mostrar en la revelación
 const ENVIRONMENTS = {
   drought: {
     emoji: '🌵',
     label: 'Alta Densidad / Sequía',
-    desc:  'Los recursos son escasos. La competencia intraespecífica es extrema. Quienes puedan dispersarse tienen ventaja.'
+    desc:  'Los recursos son escasos y la competencia intraespecífica es extrema. Quienes puedan dispersarse o resistir sin comer tienen ventaja.'
   },
   predation: {
     emoji: '🦅',
     label: 'Alta Depredación',
-    desc:  'Depredadores en todos lados. La supervivencia individual depende de la defensa y la detección grupal.'
+    desc:  'Depredadores en todos lados. La supervivencia depende de no ser detectado y de poder escapar cuando lo eres.'
   },
   stable: {
     emoji: '🌱',
     label: 'Ambiente Estable',
-    desc:  'Recursos abundantes, pocos depredadores. La competencia es baja y vale la pena invertir en reproducción.'
+    desc:  'Recursos abundantes, pocos depredadores. La competencia es baja y la inversión reproductiva tiene alto retorno.'
   }
 };
 
-// Clave de localStorage 
-const STORAGE_KEY = 'scr-ecologia5059-leaderboard-v1';
 
+// Clave de localStorage 
+const STORAGE_KEY = 'scr-ecologia5059-leaderboard-v2';
 
 // ESTADO DE LA SESIÓN!
 
-let selected    = new Set(); // IDs de caracteres seleccionados
-let spentPoints = 0;         // suma de costos de los seleccionados
+let selected    = new Set();  // IDs de caracteres seleccionados
+let spentPoints = 0;          // suma de costos de los seleccionados
 
 
 // SELECCIÓN DE CARACTERES !
@@ -981,27 +1185,49 @@ let spentPoints = 0;         // suma de costos de los seleccionados
  */
 function toggleTrait(card) {
   if (card.classList.contains('disabled')) return;
+  if (card.classList.contains('excluded')) return;
 
-  const id   = card.dataset.id;
-  const cost = parseInt(card.dataset.cost);
+  const id      = card.dataset.id;
+  const cost    = parseInt(card.dataset.cost);
+  const exclude = card.dataset.excludes; // puede ser undefined
 
   if (selected.has(id)) {
-    // Quitar: devolver puntos
+    // Quitar: devolver puntos y levantar exclusión del opuesto si existía
     selected.delete(id);
     spentPoints -= cost;
     card.classList.remove('selected');
+
+    if (exclude) {
+      const oppositeCard = document.querySelector(`[data-id="${exclude}"]`);
+      if (oppositeCard) oppositeCard.classList.remove('excluded');
+    }
   } else {
-    // Agregar: verificar presupuesto antes
+    // Agregar: verificar presupuesto
     if (spentPoints + cost > BUDGET) return;
     selected.add(id);
     spentPoints += cost;
     card.classList.add('selected');
+
+    // Bloquear el opuesto excluyente si existe
+    if (exclude) {
+      const oppositeCard = document.querySelector(`[data-id="${exclude}"]`);
+      if (oppositeCard) {
+        oppositeCard.classList.add('excluded');
+        oppositeCard.classList.remove('selected');
+        // Si el opuesto estaba seleccionado, devolverle sus puntos
+        if (selected.has(exclude)) {
+          spentPoints -= parseInt(oppositeCard.dataset.cost);
+          selected.delete(exclude);
+        }
+      }
+    }
   }
 
   updateBudgetDisplay();
   updateDisabledStates();
   updateSubmitBtn();
 }
+
 
 /*
  * updateBudgetDisplay: refresca el número, la barra y el texto.
@@ -1019,7 +1245,6 @@ function updateBudgetDisplay() {
   barEl.style.width  = pct + '%';
   usedEl.textContent = spentPoints + '/' + BUDGET + ' invertidos';
 
-  // Limpiar y reasignar clase de color
   numEl.className = 'budget-number';
   barEl.className = 'budget-bar-fill';
 
@@ -1040,6 +1265,7 @@ function updateDisabledStates() {
   const remaining = BUDGET - spentPoints;
   document.querySelectorAll('.trait-card').forEach(card => {
     if (card.classList.contains('selected')) return;
+    if (card.classList.contains('excluded')) return;
     const cost = parseInt(card.dataset.cost);
     if (cost > remaining) card.classList.add('disabled');
     else card.classList.remove('disabled');
@@ -1059,16 +1285,62 @@ document.getElementById('player-name').addEventListener('input', updateSubmitBtn
 // CÁLCULO DE FITNESS
 
 /*
- * calcFitness  suma los aportes de los caracteres seleccionados
- * en el ambiente dado y normaliza a 0-100.
+ * calcFitness
  *
- * score = (fitness_bruto / MAX_FITNESS[env]) * 100
+ * W_bruto = Σ FITNESS_TABLE[env][trait]               (contribuciones base)
+ *         + Σ COVARIANCE_TABLE[par][env]              (interacciones entre pares)
+ *
+ * W_normalizado = (W_bruto / MAX_FITNESS[env]) * 100
+ * Normalizado a 0-100 para no mostrar negativos.
+ *
+ * Las covarianzas se buscan con la clave "idA:idB" donde idA < idB para garantizar consistencia sin importar el orden de selección.
+ * (!!!!)
  */
 function calcFitness(selectedTraits, env) {
-  const table = FITNESS_TABLE[env];
-  let total   = 0;
-  selectedTraits.forEach(t => { total += (table[t] || 0); });
-  return Math.min(Math.round((total / MAX_FITNESS[env]) * 100), 100);
+  const table    = FITNESS_TABLE[env];
+  const traitArr = [...selectedTraits];
+
+  // Suma base
+  let total = 0;
+  traitArr.forEach(t => { total += (table[t] || 0); });
+
+  // Suma de covarianzas para todos los pares seleccionados
+  for (let i = 0; i < traitArr.length; i++) {
+    for (let j = i + 1; j < traitArr.length; j++) {
+      const key1 = traitArr[i] + ':' + traitArr[j];
+      const key2 = traitArr[j] + ':' + traitArr[i];
+      const covRow = COVARIANCE_TABLE[key1] || COVARIANCE_TABLE[key2];
+      if (covRow) total += (covRow[env] || 0);
+    }
+  }
+
+  const normalized = (total / MAX_FITNESS[env]) * 100;
+  return Math.max(0, Math.min(Math.round(normalized), 100));
+}
+
+/*
+ * getCovarianceBreakdown
+ * Devuelve las interacciones activas para mostrar en el desglose.
+ */
+function getCovarianceBreakdown(selectedTraits, env) {
+  const traitArr = [...selectedTraits];
+  const active   = [];
+
+  for (let i = 0; i < traitArr.length; i++) {
+    for (let j = i + 1; j < traitArr.length; j++) {
+      const key1   = traitArr[i] + ':' + traitArr[j];
+      const key2   = traitArr[j] + ':' + traitArr[i];
+      const covRow = COVARIANCE_TABLE[key1] || COVARIANCE_TABLE[key2];
+      if (covRow && covRow[env] !== 0 && covRow[env] !== undefined) {
+        active.push({
+          a:   traitArr[i],
+          b:   traitArr[j],
+          val: covRow[env]
+        });
+      }
+    }
+  }
+  return active;
 }
 
 /*
@@ -1080,13 +1352,13 @@ function calcFitness(selectedTraits, env) {
 function getInsight(score, env, traits) {
   const traitNames = [...traits].map(t => TRAITS[t].name).join(', ');
   if (score >= 85) {
-    return `<strong>¡Estrategia excelente!</strong> Tu combinación de caracteres (${traitNames}) fue altamente adaptativa para el ambiente de <strong>${ENVIRONMENTS[env].label}</strong>.`;
+    return `<strong>¡Estrategia excelente!</strong> Tu combinación (${traitNames}) fue altamente adaptativa para el ambiente de <strong>${ENVIRONMENTS[env].label}</strong>. Pero recuerda: en otro ambiente, esta misma combinación podría haberte costado la vida x.x`;
   } else if (score >= 60) {
     return `<strong>Estrategia viable.</strong> Tu organismo sobrevivió, eyii. Esto demuestra que existen múltiples estrategias funcionales, no solo una "óptima". La diversidad biológica emerge precisamente porque distintas combinaciones pueden ser igualmente exitosas en distintos contextos :3`;
   } else if (score >= 35) {
-    return `<strong>Estrategia costosa.</strong> Tus caracteres (${traitNames}) no coincidían bien con el ambiente revelado. Esto no significa que sean "malos" en absoluto pues en otro ambiente habrían sido una ventaja }:3`;
+    return `<strong>Estrategia costosa.</strong> Tus caracteres (${traitNames}) no coincidían bien con el ambiente revelado. Fíjate en el desglose: ¿alguno de tus rasgos tuvo contribución negativa? Esto no significa que sean "malos" en absoluto pues en otro ambiente habrían sido una ventaja }:3`;
   } else {
-    return `<strong>Selección negativa.</strong> Esta combinación fue poco adaptativa en el ambiente de ${ENVIRONMENTS[env].label}. Pero en un ambiente diferente, tus caracteres podrían haber sido la mejor estrategia. ¡La evolución no optimiza para todos los ambientes a la vez! >:3`;
+    return `<strong>Selección negativa.</strong> Esta combinación fue poco adaptativa en <strong>${ENVIRONMENTS[env].label}</strong>. ¿Hubo penalizaciones por covarianza? Algunos rasgos se frenan mutuamente aunque cada uno por separado tenga valor. Pero en un ambiente diferente, tus caracteres podrían haber sido la mejor estrategia. ¡La evolución no optimiza para todos los ambientes a la vez! >:3`;
   }
 }
 
@@ -1100,6 +1372,7 @@ function getInsight(score, env, traits) {
  * 3. Muestra resultados animados
  * 4. Guarda en leaderboard
  */
+
 function submitOrganismo() {
   const name = document.getElementById('player-name').value.trim();
   if (!name || selected.size === 0) return;
@@ -1131,17 +1404,41 @@ function submitOrganismo() {
   // Tabla de desglose,qué aportó cada carácter en este ambiente
   const rows = document.getElementById('breakdown-rows');
   rows.innerHTML = '';
+
   selected.forEach(id => {
     const pts = FITNESS_TABLE[env][id] || 0;
     const t   = TRAITS[id];
+    let ptsClass = 'positive';
+    if (pts === 0) ptsClass = 'zero';
+    if (pts < 0)  ptsClass = 'negative';
+    const sign = pts > 0 ? '+' : '';
     rows.innerHTML += `
       <div class="breakdown-row">
         <span class="breakdown-icon">${t.icon}</span>
         <span class="breakdown-name">${t.name}</span>
-        <span class="breakdown-pts ${pts === 0 ? 'zero' : ''}">+${pts} fitness</span>
+        <span class="breakdown-pts ${ptsClass}">${sign}${pts} fitness</span>
       </div>
     `;
   });
+
+  // Covarianzas activas
+  const covs = getCovarianceBreakdown(selected, env);
+  if (covs.length > 0) {
+    rows.innerHTML += `<div class="breakdown-divider">Interacciones entre rasgos</div>`;
+    covs.forEach(c => {
+      const nameA = TRAITS[c.a].name;
+      const nameB = TRAITS[c.b].name;
+      const sign  = c.val > 0 ? '+' : '';
+      let ptsClass = c.val > 0 ? 'positive' : 'negative';
+      rows.innerHTML += `
+        <div class="breakdown-row cov-row">
+          <span class="breakdown-icon">⇌</span>
+          <span class="breakdown-name">${nameA} × ${nameB}</span>
+          <span class="breakdown-pts ${ptsClass}">${sign}${c.val} fitness</span>
+        </div>
+      `;
+    });
+  }
 
   // Interpretación
   document.getElementById('insight-box').innerHTML = getInsight(score, env, selected);
@@ -1152,11 +1449,12 @@ function submitOrganismo() {
 
 
 // RESET 
-
 function resetGame() {
   selected.clear();
   spentPoints = 0;
-  document.querySelectorAll('.trait-card').forEach(c => c.classList.remove('selected', 'disabled'));
+  document.querySelectorAll('.trait-card').forEach(c => {
+    c.classList.remove('selected', 'disabled', 'excluded');
+  });
   document.getElementById('player-name').value = '';
   updateBudgetDisplay();
   updateSubmitBtn();
@@ -1172,10 +1470,11 @@ function resetGame() {
  * por una API (Firebase, Supabase, etc.)
  */
 
+
 function saveToLeaderboard(entry) {
   try {
-    const raw     = localStorage.getItem(STORAGE_KEY);
-    let entries   = raw ? JSON.parse(raw) : [];
+    const raw   = localStorage.getItem(STORAGE_KEY);
+    let entries = raw ? JSON.parse(raw) : [];
     entries.push(entry);
     entries.sort((a, b) => b.score - a.score);
     if (entries.length > 100) entries = entries.slice(0, 100); // límite razonable creo
@@ -1201,9 +1500,9 @@ function loadLeaderboard() {
 
     container.innerHTML = '';
     entries.forEach((e, i) => {
-      const rank      = i + 1;
-      const rankClass = rank <= 3 ? 'top' + rank : '';
-      const medal     = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '#' + rank;
+      const rank       = i + 1;
+      const rankClass  = rank <= 3 ? 'top' + rank : '';
+      const medal      = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '#' + rank;
       const traitIcons = e.traits.map(t => TRAITS[t] ? TRAITS[t].icon : '').join('');
       const traitNames = e.traits.map(t => TRAITS[t] ? TRAITS[t].name : t).join(', ');
       const envData    = ENVIRONMENTS[e.env] || {};
