@@ -52,7 +52,7 @@ $$fitness_{bruto} = \sum_{i} w_i(env)$$
 
 El segundo agrega las interacciones entre pares de rasgos que comparten sustrato fisiológico. Algunos pares se frenan mutuamente (covarianza negativa), otros son coherentes entre sí (covarianza positiva):
 
-$$fitness_{bruto} = \sum_{i} w_i(env) + \sum_{i<j} cov_{ij}(env)$$
+$$fitness = \sum_{i} w_i(env) + \sum_{i<j} cov_{ij}(env)$$
 
 Finalmente se normaliza sobre el máximo alcanzable por ambiente:
 
